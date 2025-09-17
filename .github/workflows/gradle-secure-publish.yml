@@ -50,9 +50,9 @@ jobs:
                     mavenJava(MavenPublication) {
                         from components.java
 
-                        groupId = ${{ github.event.inputs.project_group }}
+                        groupId = "${{ github.event.inputs.project_group }}"
                         artifactId = 'trident'
-                        version = ${{ github.event.inputs.project_version }}
+                        version = "${{ github.event.inputs.project_version }}"
 
                         pom {
                             name = 'trident'
