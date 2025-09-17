@@ -41,6 +41,8 @@ jobs:
         run: |
           cat > init-publish.gradle <<'EOF'
           allprojects {
+              // Apply Java and Maven Publish plugins
+              apply plugin: 'java'
               apply plugin: 'maven-publish'
 
               publishing {
