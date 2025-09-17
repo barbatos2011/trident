@@ -25,7 +25,8 @@ jobs:
 
       # --- Regular Gradle build (with dependency verification) ---
       - name: Build project
-        run: ./gradlew build --verify
+        run: ./gradlew clean build
+
 
       # --- Create init.gradle for publishing ---
       - name: Create Gradle init script for publishing
