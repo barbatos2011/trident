@@ -12,6 +12,10 @@ on:
                 required: true
                 default: "io.github.tronprotocol"
 
+permissions:
+    id-token: write # Only allow OIDC token access
+    contents: read # Limit repository access
+
 jobs:
     build:
         runs-on: ubuntu-latest
