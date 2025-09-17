@@ -17,11 +17,11 @@ jobs:
           distribution: temurin
           java-version: "8"
 
-      # # --- Gradle Dependency Verification ---
-      # - name: Verify Gradle Dependencies
-      #   run: ./gradlew --write-verification-metadata sha256
-      # # This generates gradle/verification-metadata.xml if missing
-      # # Commit this file once, then verification will run on every build
+      # --- Gradle Dependency Verification ---
+      - name: Verify Gradle Dependencies
+        run: ./gradlew --write-verification-metadata sha256
+      # This generates gradle/verification-metadata.xml if missing
+      # Commit this file once, then verification will run on every build
 
       # --- Regular Gradle build (with dependency verification) ---
       - name: Build project
