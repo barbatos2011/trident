@@ -1,0 +1,133 @@
+name: Gradle Secure Build + POM Generation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: oracle
+          java-version: "8"
+
+      # # --- Gradle Dependency Verification ---
+      # - name: Verify Gradle Dependencies
+      #   run: ./gradlew --write-verification-metadata sha256
+      # # This generates gradle/verification-metadata.xml if missing
+      # # Commit this file once, then verification will run on every build
+
+      # --- Regular Gradle build (with dependency verification) ---
+      - name: Build project
+        run: ./gradlew build --verify
+
+      # --- Create init.gradle for publishing ---
+      - name: Create Gradle init script for publishing
+        run: |
+          cat > init-publish.gradle <<'EOF'
+          allprojects {
+              apply plugin: 'maven-publish'
+
+              publishing {
+                publications {
+                    mavenJava(MavenPublication) {
+                        from components.java
+
+                        groupId = project.group
+                        artifactId = 'trident'
+                        version = project.version
+
+                        pom {
+                            name = 'trident'
+                            description = 'Java implementation of trident'
+                            url = 'https://github.com/tronprotocol/trident'
+
+                            licenses {
+                                license {
+                                    name = 'The Apache License, Version 2.0'
+                                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                                }
+                            }
+
+                            developers {
+                                developer {
+                                    name = 'jiangyuanshu'
+                                    email = '317787106@qq.com'
+                                }
+                                developer {
+                                    name = 'apple'
+                                    email = 'apple0xlee@gmail.com'
+                                }
+                            }
+
+                            scm {
+                                connection = 'scm:git:git://github.com/tronprotocol/trident.git'
+                                developerConnection = 'scm:git:ssh://github.com/tronprotocol/trident.git'
+                                url = 'https://github.com/tronprotocol/trident'
+                            }
+
+                            // collect all dependencies of subprojects
+                            withXml {
+                                def dependenciesNode = asNode().appendNode('dependencies')
+                                def seenDependencies = [] as Set
+                                subprojects.each { subproject ->
+                                    {
+                                        subproject.properties.configurations.implementation.allDependencies.each { dep ->
+                                            {//println dep
+                                                if (dep.group != null && dep.name != null && dep.version != null && dep.group != artifactId) {
+                                                    def dependencyIdentifier = "${dep.group}:${dep.name}:${dep.version}"
+                                                    //drop duplicate
+                                                    if (!seenDependencies.contains(dependencyIdentifier)) {
+                                                        seenDependencies << dependencyIdentifier
+                                                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                                                        dependencyNode.appendNode('groupId', dep.group)
+                                                        dependencyNode.appendNode('artifactId', dep.name)
+                                                        dependencyNode.appendNode('version', dep.version)
+                                                        //dependencyNode.appendNode('scope', 'runtime')
+
+                                                        // for exclusions
+                                                        if (dep.excludeRules.size() > 0) {
+                                                            def exclusions = dependencyNode.appendNode('exclusions')
+                                                            dep.excludeRules.each { ExcludeRule ex ->
+                                                                def exclusion = exclusions.appendNode('exclusion')
+                                                                exclusion.appendNode('groupId', ex.group)
+                                                                exclusion.appendNode('artifactId', ex.module)
+                                                            }
+                                                        }
+                                                    }
+                                                }// end if
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            //end withXml
+                        }
+                    }
+                }
+
+                repositories {
+                    mavenLocal()
+                }
+              }
+          }
+          EOF
+
+      # --- Generate POM using init script ---
+      - name: Generate POM file
+        run: ./gradlew generatePomFileForMavenJavaPublication -I init-publish.gradle
+
+      # --- Upload generated POM as artifact ---
+      - name: Upload POM file
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-pom
+          path: build/publications/mavenJava/pom-default.xml
