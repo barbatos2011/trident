@@ -140,3 +140,9 @@ jobs:
         with:
           name: generated-pom
           path: build/publications/mavenJava/pom-default.xml
+
+      - name: Upload JAR files
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars-${{ github.event.inputs.project_version }}
+          path: build/libs/*.jar
