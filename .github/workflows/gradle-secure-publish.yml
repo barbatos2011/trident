@@ -2,7 +2,15 @@ name: Gradle Secure Build + POM Generation
 
 on:
   workflow_dispatch:
-
+    inputs:
+      project_version:
+        description: "Project version (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+      project_group:
+        description: "Project group (e.g. io.github.tronprotocol)"
+        required: true
+        default: "io.github.tronprotocol"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,9 +48,9 @@ jobs:
                     mavenJava(MavenPublication) {
                         from components.java
 
-                        groupId = project.group
+                        groupId = ${{ github.event.inputs.project_group }}
                         artifactId = 'trident'
-                        version = project.version
+                        version = ${{ github.event.inputs.project_version }}
 
                         pom {
                             name = 'trident'
