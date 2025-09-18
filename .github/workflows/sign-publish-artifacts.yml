@@ -48,7 +48,7 @@ jobs:
       - name: Download files from S3
         run: |
           echo "Downloading files from ${{ env.S3_PATH }}"
-          aws s3 cp "s3://${{ env.S3_PATH }}/" "${{ env.DOWNLOAD_DIR }}" 
+          aws s3 cp s3://${{ env.S3_PATH }}/${{ env.DOWNLOAD_DIR }} --exclude "*" --include "trident-${{ github.event.inputs.project_version }}*"
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
