@@ -1,169 +1,169 @@
 name: Gradle Secure Build + POM Generation
 
 on:
-    workflow_dispatch:
-        inputs:
-            project_version:
-                description: "Project version (e.g. 1.0.0)"
-                required: true
-                default: "1.0.0"
-            project_group:
-                description: "Project group (e.g. io.github.tronprotocol)"
-                required: true
-                default: "io.github.tronprotocol"
+  workflow_dispatch:
+    inputs:
+      project_version:
+        description: "Project version (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+      project_group:
+        description: "Project group (e.g. io.github.tronprotocol)"
+        required: true
+        default: "io.github.tronprotocol"
 
 permissions:
-    id-token: write # Only allow OIDC token access
-    contents: read # Limit repository access
+  id-token: write # Only allow OIDC token access
+  contents: read # Limit repository access
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Set up JDK 8
-              uses: actions/setup-java@v4
-              with:
-                  distribution: temurin
-                  java-version: "8"
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
 
-            # --- Gradle Dependency Verification ---
-            - name: Verify Gradle Dependencies
-              run: ./gradlew --write-verification-metadata sha256
-            # This generates gradle/verification-metadata.xml if missing
-            # Commit this file once, then verification will run on every build
+      # --- Gradle Dependency Verification ---
+      - name: Verify Gradle Dependencies
+        run: ./gradlew --write-verification-metadata sha256
+      # This generates gradle/verification-metadata.xml if missing
+      # Commit this file once, then verification will run on every build
 
-            # --- Regular Gradle build (with dependency verification) ---
-            - name: Build project
-              run: ./gradlew clean build -x test
+      # --- Regular Gradle build (with dependency verification) ---
+      - name: Build project
+        run: ./gradlew clean build -x test
 
-            # --- Create init.gradle for publishing ---
-            - name: Create Gradle init script for publishing
-              run: |
-                  cat > init-publish.gradle <<'EOF'
-                  allprojects {
-                      // Apply Java and Maven Publish plugins
-                      apply plugin: 'java'
-                      apply plugin: 'maven-publish'
+      # --- Create init.gradle for publishing ---
+      - name: Create Gradle init script for publishing
+        run: |
+          cat > init-publish.gradle <<'EOF'
+          allprojects {
+              // Apply Java and Maven Publish plugins
+              apply plugin: 'java'
+              apply plugin: 'maven-publish'
 
-                      publishing {
-                        publications {
-                            mavenJava(MavenPublication) {
-                                from components.java
+              publishing {
+                publications {
+                    mavenJava(MavenPublication) {
+                        from components.java
 
-                                groupId = "${{ github.event.inputs.project_group }}"
-                                artifactId = 'trident'
-                                version = "${{ github.event.inputs.project_version }}"
+                        groupId = "${{ github.event.inputs.project_group }}"
+                        artifactId = 'trident'
+                        version = "${{ github.event.inputs.project_version }}"
 
-                                pom {
-                                    name = 'trident'
-                                    description = 'Java implementation of trident'
-                                    url = 'https://github.com/tronprotocol/trident'
+                        pom {
+                            name = 'trident'
+                            description = 'Java implementation of trident'
+                            url = 'https://github.com/tronprotocol/trident'
 
-                                    licenses {
-                                        license {
-                                            name = 'The Apache License, Version 2.0'
-                                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                                        }
-                                    }
+                            licenses {
+                                license {
+                                    name = 'The Apache License, Version 2.0'
+                                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                                }
+                            }
 
-                                    developers {
-                                        developer {
-                                            name = 'jiangyuanshu'
-                                            email = '317787106@qq.com'
-                                        }
-                                        developer {
-                                            name = 'apple'
-                                            email = 'apple0xlee@gmail.com'
-                                        }
-                                    }
+                            developers {
+                                developer {
+                                    name = 'jiangyuanshu'
+                                    email = '317787106@qq.com'
+                                }
+                                developer {
+                                    name = 'apple'
+                                    email = 'apple0xlee@gmail.com'
+                                }
+                            }
 
-                                    scm {
-                                        connection = 'scm:git:git://github.com/tronprotocol/trident.git'
-                                        developerConnection = 'scm:git:ssh://github.com/tronprotocol/trident.git'
-                                        url = 'https://github.com/tronprotocol/trident'
-                                    }
+                            scm {
+                                connection = 'scm:git:git://github.com/tronprotocol/trident.git'
+                                developerConnection = 'scm:git:ssh://github.com/tronprotocol/trident.git'
+                                url = 'https://github.com/tronprotocol/trident'
+                            }
 
-                                    // collect all dependencies of subprojects
-                                    withXml {
-                                        def dependenciesNode = asNode().appendNode('dependencies')
-                                        def seenDependencies = [] as Set
-                                        subprojects.each { subproject ->
-                                            {
-                                                subproject.properties.configurations.implementation.allDependencies.each { dep ->
-                                                    {//println dep
-                                                        if (dep.group != null && dep.name != null && dep.version != null && dep.group != artifactId) {
-                                                            def dependencyIdentifier = "${dep.group}:${dep.name}:${dep.version}"
-                                                            //drop duplicate
-                                                            if (!seenDependencies.contains(dependencyIdentifier)) {
-                                                                seenDependencies << dependencyIdentifier
-                                                                def dependencyNode = dependenciesNode.appendNode('dependency')
-                                                                dependencyNode.appendNode('groupId', dep.group)
-                                                                dependencyNode.appendNode('artifactId', dep.name)
-                                                                dependencyNode.appendNode('version', dep.version)
-                                                                //dependencyNode.appendNode('scope', 'runtime')
+                            // collect all dependencies of subprojects
+                            withXml {
+                                def dependenciesNode = asNode().appendNode('dependencies')
+                                def seenDependencies = [] as Set
+                                subprojects.each { subproject ->
+                                    {
+                                        subproject.properties.configurations.implementation.allDependencies.each { dep ->
+                                            {//println dep
+                                                if (dep.group != null && dep.name != null && dep.version != null && dep.group != artifactId) {
+                                                    def dependencyIdentifier = "${dep.group}:${dep.name}:${dep.version}"
+                                                    //drop duplicate
+                                                    if (!seenDependencies.contains(dependencyIdentifier)) {
+                                                        seenDependencies << dependencyIdentifier
+                                                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                                                        dependencyNode.appendNode('groupId', dep.group)
+                                                        dependencyNode.appendNode('artifactId', dep.name)
+                                                        dependencyNode.appendNode('version', dep.version)
+                                                        //dependencyNode.appendNode('scope', 'runtime')
 
-                                                                // for exclusions
-                                                                if (dep.excludeRules.size() > 0) {
-                                                                    def exclusions = dependencyNode.appendNode('exclusions')
-                                                                    dep.excludeRules.each { ExcludeRule ex ->
-                                                                        def exclusion = exclusions.appendNode('exclusion')
-                                                                        exclusion.appendNode('groupId', ex.group)
-                                                                        exclusion.appendNode('artifactId', ex.module)
-                                                                    }
-                                                                }
+                                                        // for exclusions
+                                                        if (dep.excludeRules.size() > 0) {
+                                                            def exclusions = dependencyNode.appendNode('exclusions')
+                                                            dep.excludeRules.each { ExcludeRule ex ->
+                                                                def exclusion = exclusions.appendNode('exclusion')
+                                                                exclusion.appendNode('groupId', ex.group)
+                                                                exclusion.appendNode('artifactId', ex.module)
                                                             }
-                                                        }// end if
+                                                        }
                                                     }
-                                                }
+                                                }// end if
                                             }
                                         }
                                     }
-                                    //end withXml
                                 }
                             }
+                            //end withXml
                         }
+                    }
+                }
 
-                        repositories {
-                            mavenLocal()
-                        }
-                      }
-                  }
-                  EOF
+                repositories {
+                    mavenLocal()
+                }
+              }
+          }
+          EOF
 
-            # --- Generate POM using init script ---
-            - name: Generate POM file
-              run: ./gradlew generatePomFileForMavenJavaPublication -I init-publish.gradle
+      # --- Generate POM using init script ---
+      - name: Generate POM file
+        run: ./gradlew generatePomFileForMavenJavaPublication -I init-publish.gradle
 
-            # --- Upload generated POM as artifact ---
-            - name: Upload POM file
-              uses: actions/upload-artifact@v4
-              with:
-                  name: generated-pom
-                  path: build/publications/mavenJava/pom-default.xml
+      # --- Upload generated POM as artifact ---
+      - name: Upload POM file
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-pom
+          path: build/publications/mavenJava/pom-default.xml
 
-            - name: Upload JAR files
-              uses: actions/upload-artifact@v4
-              with:
-                  name: jars-${{ github.event.inputs.project_version }}
-                  path: build/libs/*.jar
+      - name: Upload JAR files
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars-${{ github.event.inputs.project_version }}
+          path: build/libs/*.jar
 
-            # --- AWS S3 Upload Section ---
-            - name: Configure AWS Credentials (OIDC)
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 👈 replace with your IAM role
-                  aws-region: ${{ secrets.AWS_REGION }}
+      # --- AWS S3 Upload Section ---
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 👈 replace with your IAM role
+          aws-region: ${{ secrets.AWS_REGION }}
 
-            - name: Upload artifacts to S3
-              run: |
-                  DEST="s3://${{ secrets.S3_BUCKET }}"
-                  if [ -n "${{ secrets.S3_PREFIX }}" ]; then
-                      DEST="$DEST/${{ secrets.S3_PREFIX }}"
-                  fi
-                  DEST="$DEST/${{ github.event.inputs.project_version }}"
-                  aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/pom-${{ github.event.inputs.project_version }}.xml"
-                  aws s3 cp build/libs/ "$DEST/" --recursive --exclude "*" --include "*.jar"
+      - name: Upload artifacts to S3
+        run: |
+          DEST="s3://${{ secrets.S3_BUCKET }}"
+          if [ -n "${{ secrets.S3_PREFIX }}" ]; then
+              DEST="$DEST/${{ secrets.S3_PREFIX }}"
+          fi
+          DEST="$DEST/${{ github.event.inputs.project_version }}"
+          aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/pom-${{ github.event.inputs.project_version }}.xml"
+          aws s3 cp build/libs/ "$DEST/" --recursive --exclude "*" --include "*.jar"
