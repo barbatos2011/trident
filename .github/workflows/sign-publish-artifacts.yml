@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Set S3 path
         run: |
-          echo "S3_PATH=s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_PREFIX }}/${{ github.event.inputs.project_version }}" >> $GITHUB_ENV
+          echo "S3_PATH=${{ secrets.S3_BUCKET }}/${{ secrets.S3_PREFIX }}/${{ github.event.inputs.project_version }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -46,7 +46,6 @@ jobs:
         run: mkdir -p ${{ env.DOWNLOAD_DIR }}
 
       - name: Download files from S3
-        if: steps.list-files.outputs.file_exists == 'true'
         run: |
           echo "Downloading files from ${{ env.S3_PATH }}"
           aws s3 cp "s3://${{ env.S3_PATH }}/" "${{ env.DOWNLOAD_DIR }}/" --exclude "*" --include "trident-${{ github.event.inputs.project_version }}*"
