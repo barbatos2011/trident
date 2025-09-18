@@ -48,6 +48,9 @@ jobs:
       - name: Download files from S3
         run: |
           echo "Downloading files from tron-trident-dev/release/"
+          echo "S3 Object Key: ${{ secrets.S3_BUCKET }}"
+          echo "S3 Object Key: ${{ secrets.S3_PREFIX }}"
+          echo "Bucket: tron-trident-dev"
           aws s3 cp s3://tron-trident-dev/release/0.11.0/ ${{ env.DOWNLOAD_DIR }}/ 
 
           # Verify download was successful
