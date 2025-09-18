@@ -1,4 +1,4 @@
-name: Gradle Secure Build + POM Generation
+name: Build - Artifacts
 
 on:
   workflow_dispatch:
