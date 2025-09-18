@@ -39,7 +39,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 👈 replace with your IAM role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DOWNLOAD }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Create download directory
