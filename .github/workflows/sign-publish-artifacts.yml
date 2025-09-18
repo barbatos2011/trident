@@ -47,11 +47,8 @@ jobs:
 
       - name: Download files from S3
         run: |
-          echo "Downloading files from tron-trident-dev/release/"
-          echo "S3 Object Key: ${{ secrets.S3_BUCKET }}"
-          echo "S3 Object Key: ${{ secrets.S3_PREFIX }}"
-          echo "Bucket: tron-trident-dev"
-          aws s3 cp "s3://tron-trident-dev/release/0.11.0/" "${{ env.DOWNLOAD_DIR }}/"
+          echo "Downloading files from ${{ env.S3_PATH }}"
+          aws s3 cp s3://${{ env.S3_PATH }}/ ${{ env.DOWNLOAD_DIR }}/ --recursive --exclude "*" --include "trident-${{ github.event.inputs.project_version }}*"
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
