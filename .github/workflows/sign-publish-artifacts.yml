@@ -16,7 +16,7 @@ on:
       project_version:
         description: "Project version (e.g. 1.0.0)"
         required: true
-        default: "1.0.0"
+        default: ""
 
 jobs:
   download-from-s3-and-sign:
@@ -45,25 +45,11 @@ jobs:
       - name: Create download directory
         run: mkdir -p ${{ env.DOWNLOAD_DIR }}
 
-      - name: List files in S3 bucket
-        id: list-files
-        run: |
-          # Check if the S3 path exists
-          if aws s3 ls "s3://${{ env.S3_PATH }}/" --recursive | grep -q .; then
-            echo "Files found in s3://${{ env.S3_PATH }}/"
-            aws s3 ls "s3://${{ env.S3_PATH }}/" --recursive
-            echo "file_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "Error: No files found in s3://${{ env.S3_PATH }}/"
-            echo "file_exists=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
       - name: Download files from S3
         if: steps.list-files.outputs.file_exists == 'true'
         run: |
           echo "Downloading files from ${{ env.S3_PATH }}"
-          aws s3 cp "s3://${{ env.S3_PATH }}/" "${{ env.DOWNLOAD_DIR }}/" --recursive
+          aws s3 cp "s3://${{ env.S3_PATH }}" "${{ env.DOWNLOAD_DIR }}/" --recursive
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
@@ -77,7 +63,7 @@ jobs:
       - name: Create download summary
         run: |
           echo "## S3 Download Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Downloaded files from \`${{ env.S3_PATH }}/\`" >> $GITHUB_STEP_SUMMARY
+          echo "Downloaded files from \`${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**S3 Path:** $${{ env.S3_PATH }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
