@@ -47,8 +47,8 @@ jobs:
 
       - name: Download files from S3
         run: |
-          echo "Downloading files from ${{ env.S3_PATH }}"
-          aws s3 cp s3://tron-trident-dev/release/ ${{ env.DOWNLOAD_DIR }}/ 
+          echo "Downloading files from tron-trident-dev/release/"
+          aws s3 cp s3://tron-trident-dev/release/0.11.0/ ${{ env.DOWNLOAD_DIR }}/ 
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
