@@ -122,6 +122,7 @@ jobs:
 
       - name: Gzip files
         run: |
+          rm -f trident-${{ inputs.project_version }}-bundle.zip
           zip -r trident-${{ inputs.project_version }}-bundle.zip io/
           LOCAL_MD5=$(md5sum trident-${{ inputs.project_version }}-bundle.zip | awk '{print $1}')
           echo "trident-${{ inputs.project_version }}-bundle.zip: $LOCAL_MD5"
