@@ -165,3 +165,4 @@ jobs:
             LOCAL_MD5=$(md5 -q $file)
             echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
             echo "$FILENAME: $LOCAL_MD5"
+          fi
