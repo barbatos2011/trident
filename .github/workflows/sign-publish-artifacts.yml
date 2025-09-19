@@ -56,7 +56,7 @@ jobs:
             exit 1
           else
             echo "Download from S3 completed successfully"
-            ls -la "${{ env.DOWNLOAD_DIR }}"
+            ls -l "${{ env.DOWNLOAD_DIR }}" | awk '{ $3=""; $4=""; print }'
           fi
 
       - name: Create download summary
@@ -64,17 +64,17 @@ jobs:
           echo "## S3 Download Summary" >> $GITHUB_STEP_SUMMARY
           echo "Downloaded files from \`${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**S3 Path:** $${{ env.S3_PATH }}" >> $GITHUB_STEP_SUMMARY
+          echo "**S3 Path:** \`$${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Downloaded Files:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          ls -la "${{ env.DOWNLOAD_DIR }}" >> $GITHUB_STEP_SUMMARY
+          ls -l "${{ env.DOWNLOAD_DIR }}" >> $GITHUB_STEP_SUMMARY | awk '{ $3=""; $4=""; print }'
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: List files to sign
         run: |
           echo "Files to sign:"
-          ls -la ${{ env.DOWNLOAD_DIR }}
+          ls -l ${{ env.DOWNLOAD_DIR }} | awk '{ $3=""; $4=""; print }'
 
       - name: Sign artifacts
         run: |
@@ -107,77 +107,56 @@ jobs:
 
           # Verify signature files were created
           echo "Signature files created:"
-          ls -la ${{ env.DOWNLOAD_DIR }}/*.sig || echo "No signature files found"
+          ls -l ${{ env.DOWNLOAD_DIR }}/*.sig | awk '{ $3=""; $4=""; print }' || echo "No signature files found"
 
       - name: Create signing summary
         run: |
           echo "## Signing Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Signed artifacts for **${{ env.S3_PATH }}**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**GPG Key:** ${{ secrets.gpg-fingerprint }}" >> $GITHUB_STEP_SUMMARY
+          echo "Signed artifacts for \`${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Signed Files:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          ls -la ${{ env.DOWNLOAD_DIR }} >> $GITHUB_STEP_SUMMARY
+          ls -l ${{ env.DOWNLOAD_DIR }} | awk '{ $3=""; $4=""; print }' >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Gzip files
+        run: |
+          zip -r trident-${{ inputs.project_version }}-bundle.zip io/
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: signed-files-${{ inputs.project_version }}
-          path: "./io"
+          name: trident-${{ inputs.project_version }}-bundle.zip
+          path: "./trident-${{ inputs.project_version }}-bundle.zip"
           if-no-files-found: error
 
-  # upload-signed-to-s3:
-  #   name: Upload Signed Artifacts to S3
-  #   runs-on: ubuntu-22.04
-  #   needs: download-from-s3-and-sign
+  upload-signed-to-s3:
+    name: Upload Signed Artifacts to S3
+    runs-on: ubuntu-22.04
+    needs: download-from-s3-and-sign
 
-  #   permissions:
-  #     actions: read
-  #     contents: read
-  #     id-token: write # Needed for AWS credential provider
+    permissions:
+      actions: read
+      contents: read
+      id-token: write # Needed for AWS credential provider
 
-  #   steps:
-  #     - name: Download signed artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: signed-files-${{ inputs.s3-path }}
-  #         path: ./signed-artifacts/
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_UPLOAD_TEST }} # 👈 replace with your IAM role
+          aws-region: ${{ secrets.AWS_REGION }}
 
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
+      - name: Set S3 path for signed artifacts
+        run: |
+          S3_SIGNED_PATH="s3://${{ secrets.S3_BUCKET_TEST }}"
+          if [ -n "${{ secrets.S3_PREFIX }}" ]; then
+              S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ secrets.S3_PREFIX }}"
+          fi
+          S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ github.event.inputs.project_version }}"
 
-  #     - name: Set S3 path for signed artifacts
-  #       run: |
-  #         echo "S3_SIGNED_PATH=${{ secrets.AWS_S3_BUCKET }}/${{ inputs.s3-path }}-signed" >> $GITHUB_ENV
-
-  #     - name: Upload signed artifacts to S3
-  #       run: |
-  #         echo "Uploading signed artifacts to s3://${{ env.S3_SIGNED_PATH }}/"
-  #         aws s3 cp ./signed-artifacts/ "s3://${{ env.S3_SIGNED_PATH }}/" --recursive
-
-  #         # Verify upload was successful
-  #         if aws s3 ls "s3://${{ env.S3_SIGNED_PATH }}/" --recursive | grep -q .; then
-  #           echo "Upload of signed artifacts to S3 completed successfully"
-            
-  #           # Create a list of uploaded files for the job summary
-  #           echo "## S3 Upload Summary - Signed Artifacts" >> $GITHUB_STEP_SUMMARY
-  #           echo "Successfully uploaded signed files to \`s3://${{ secrets.AWS_S3_BUCKET }}/${{ inputs.s3-path }}-signed/\`" >> $GITHUB_STEP_SUMMARY
-  #           echo "" >> $GITHUB_STEP_SUMMARY
-  #           echo "**S3 Path:** ${{ inputs.s3-path }}-signed" >> $GITHUB_STEP_SUMMARY
-  #           echo "" >> $GITHUB_STEP_SUMMARY
-  #           echo "### Uploaded Signed Files:" >> $GITHUB_STEP_SUMMARY
-  #           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-  #           aws s3 ls "s3://${{ env.S3_SIGNED_PATH }}/" --recursive >> $GITHUB_STEP_SUMMARY
-  #           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-  #         else
-  #           echo "Error: Failed to verify files in S3 bucket after upload"
-  #           echo "## S3 Upload Failed - Signed Artifacts" >> $GITHUB_STEP_SUMMARY
-  #           echo "Failed to verify signed files in \`s3://${{ secrets.AWS_S3_BUCKET }}/${{ inputs.s3-path }}-signed/\` after upload" >> $GITHUB_STEP_SUMMARY
-  #           exit 1
-  #         fi
+      - name: Upload signed artifacts to S3
+        run: |
+          echo "Uploading signed artifacts to s3://${{ env.S3_SIGNED_PATH }}/"
+          aws s3 cp ./trident-${{ inputs.project_version }}-bundle.zip "s3://${{ env.S3_SIGNED_PATH }}/" --recursive
+          echo "Upload of signed artifacts to S3 completed successfully"
