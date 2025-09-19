@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Set S3 path
         run: |
-          echo "S3_PATH=${{ secrets.S3_BUCKET }}/${{ secrets.S3_PREFIX }}/${{ github.event.inputs.project_version }}" >> $GITHUB_ENV
+          echo "S3_PATH=${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}/${{ github.event.inputs.project_version }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
