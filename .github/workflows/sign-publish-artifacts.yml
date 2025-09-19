@@ -1,13 +1,3 @@
-# This workflow downloads artifacts from AWS S3 that were previously uploaded by the build-xxxx.yml workflow.
-# It can optionally sign the downloaded artifacts using GPG and upload the signed artifacts back to S3.
-#
-# Required inputs:
-# - s3-path: The S3 path for this build (e.g., v1.0.0-{YYYYMMDD-HHMMSS}-{7-characters-commit-hash}-plt-jdk)
-# - gpg-fingerprint: GPG key fingerprint for signing
-#
-# Optional inputs:
-# - download-dir: Directory to download files to (default: ./downloads)
-
 name: Sign - Artifacts
 
 on:
@@ -92,7 +82,7 @@ jobs:
             if [ -f "$file" ]; then
               echo "Signing $file"
               # 生成GPG签名
-              gpg --local-user ${{ secrets.gpg-fingerprint }} --armor --detach-sign ${file}
+              gpg --local-user ${{ secrets.GPG_FINGERPRINT }} --armor --detach-sign ${file}
               # 生成校验和 (Mac系统专用命令)
               md5 ${file} | awk '{print $NF}' > ${file}.md5
               shasum -a 1 ${file} | awk '{print $1}' > ${file}.sha1
