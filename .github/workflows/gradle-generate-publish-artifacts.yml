@@ -155,15 +155,31 @@ jobs:
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 👈 replace with your IAM role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV_UPLOAD }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload artifacts to S3
         run: |
-          DEST="s3://${{ secrets.S3_BUCKET }}"
+          DEST="s3://${{ secrets.S3_BUCKET_DEV }}"
           if [ -n "${{ secrets.S3_PREFIX }}" ]; then
               DEST="$DEST/${{ secrets.S3_PREFIX }}"
           fi
           DEST="$DEST/${{ github.event.inputs.project_version }}"
           aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/pom-${{ github.event.inputs.project_version }}.xml"
           aws s3 cp build/libs/ "$DEST/" --recursive --exclude "*" --include "*.jar"
+
+          echo "## MD5 Summary of Uploaded Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          for file in build/libs/*.jar; do
+          if [ -f "$file" ]; then
+            FILENAME=$(basename "$file")
+            LOCAL_MD5=$(md5 -q $file)
+            echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+            echo "$FILENAME: $LOCAL_MD5"
+
+          LOCAL_MD5=$(md5 -q build/publications/mavenJava/pom-default.xml)
+          echo "| pom-default.xml | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+          echo "pom-default.xml: $LOCAL_MD5"
+

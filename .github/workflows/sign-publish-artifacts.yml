@@ -29,7 +29,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DOWNLOAD }} # 👈 replace with your IAM role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV_DOWNLOAD }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Create download directory
@@ -141,7 +141,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_UPLOAD_TEST }} # 👈 replace with your IAM role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TEST_UPLOAD }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload signed artifacts to S3
@@ -154,3 +154,14 @@ jobs:
           echo "Uploading signed artifacts to $S3_SIGNED_PATH"
           aws s3 cp "./signed-artifacts/" "$S3_SIGNED_PATH" --recursive
           echo "Upload of signed artifacts to S3 completed successfully"
+
+          echo "## MD5 Summary of Uploaded Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          for file in ./signed-artifacts/*; do
+          if [ -f "$file" ]; then
+            FILENAME=$(basename "$file")
+            LOCAL_MD5=$(md5 -q $file)
+            echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+            echo "$FILENAME: $LOCAL_MD5"
