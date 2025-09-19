@@ -175,13 +175,13 @@ jobs:
           for file in build/libs/*.jar; do
             if [ -f "$file" ]; then
               FILENAME=$(basename "$file")
-              LOCAL_MD5=$(md5sum -q $file)
+              LOCAL_MD5=$(md5sum $file | awk '{print $1}')
               echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
               echo "$FILENAME: $LOCAL_MD5"
             fi
           done
 
-          LOCAL_MD5=$(md5sum -q build/publications/mavenJava/pom-default.xml)
+          LOCAL_MD5=$(md5sum build/publications/mavenJava/pom-default.xml | awk '{print $1}')
           echo "| pom-default.xml | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
           echo "pom-default.xml: $LOCAL_MD5"
 

@@ -175,7 +175,7 @@ jobs:
           for file in ./signed-artifacts/*; do
             if [ -f "$file" ]; then
               FILENAME=$(basename "$file")
-              LOCAL_MD5=$(md5sum -q $file)
+              LOCAL_MD5=$(md5sum $file | awk '{print $1}')
               echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
               echo "$FILENAME: $LOCAL_MD5"
             fi
