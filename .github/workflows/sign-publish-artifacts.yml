@@ -39,7 +39,6 @@ jobs:
         run: |
           echo "Downloading files from ${{ env.S3_PATH }}"
           aws s3 cp s3://${{ env.S3_PATH }}/ ${{ env.DOWNLOAD_DIR }}/ --recursive --exclude "*" --include "trident-${{ github.event.inputs.project_version }}*"
-          aws s3 cp s3://${{ env.S3_PATH }}/ ${{ env.DOWNLOAD_DIR }}/ --recursive --exclude "*" --include "pom-${{ github.event.inputs.project_version }}.xml"
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
@@ -124,6 +123,8 @@ jobs:
       - name: Gzip files
         run: |
           zip -r trident-${{ inputs.project_version }}-bundle.zip io/
+          LOCAL_MD5=$(md5sum trident-${{ inputs.project_version }}-bundle.zip | awk '{print $1}')
+          echo "trident-${{ inputs.project_version }}-bundle.zip: $LOCAL_MD5"
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
