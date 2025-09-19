@@ -173,12 +173,13 @@ jobs:
           echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
           for file in build/libs/*.jar; do
-          if [ -f "$file" ]; then
-            FILENAME=$(basename "$file")
-            LOCAL_MD5=$(md5 -q $file)
-            echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
-            echo "$FILENAME: $LOCAL_MD5"
-          fi
+            if [ -f "$file" ]; then
+              FILENAME=$(basename "$file")
+              LOCAL_MD5=$(md5 -q $file)
+              echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+              echo "$FILENAME: $LOCAL_MD5"
+            fi
+          done
 
           LOCAL_MD5=$(md5 -q build/publications/mavenJava/pom-default.xml)
           echo "| pom-default.xml | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY

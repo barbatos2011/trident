@@ -160,9 +160,10 @@ jobs:
           echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
           for file in ./signed-artifacts/*; do
-          if [ -f "$file" ]; then
-            FILENAME=$(basename "$file")
-            LOCAL_MD5=$(md5 -q $file)
-            echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
-            echo "$FILENAME: $LOCAL_MD5"
-          fi
+            if [ -f "$file" ]; then
+              FILENAME=$(basename "$file")
+              LOCAL_MD5=$(md5 -q $file)
+              echo "| $FILENAME | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+              echo "$FILENAME: $LOCAL_MD5"
+            fi
+          done
