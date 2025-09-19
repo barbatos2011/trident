@@ -50,7 +50,17 @@ jobs:
             ls -l "${{ env.DOWNLOAD_DIR }}" | awk '{ $3=""; $4=""; print }'
           fi
 
-          echo "## MD5 Summary of Downloaded Files" >> $GITHUB_STEP_SUMMARY
+      - name: Create download summary
+        run: |
+          echo "## S3 Download Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Downloaded files from \`${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Downloaded Files:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -l "${{ env.DOWNLOAD_DIR }}" | awk '{ $3=""; $4=""; print }' >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "### MD5 Summary of Downloaded Files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Filename | MD5 Hash |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|----------|" >> $GITHUB_STEP_SUMMARY
@@ -62,18 +72,6 @@ jobs:
               echo "$FILENAME: $LOCAL_MD5"
             fi
           done
-
-      - name: Create download summary
-        run: |
-          echo "## S3 Download Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Downloaded files from \`${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**S3 Path:** \`$${{ env.S3_PATH }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Downloaded Files:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          ls -l "${{ env.DOWNLOAD_DIR }}" | awk '{ $3=""; $4=""; print }' >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: List files to sign
         run: |
