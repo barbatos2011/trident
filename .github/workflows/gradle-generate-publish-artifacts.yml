@@ -165,7 +165,7 @@ jobs:
               DEST="$DEST/${{ secrets.S3_PREFIX }}"
           fi
           DEST="$DEST/${{ github.event.inputs.project_version }}"
-          aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/pom-${{ github.event.inputs.project_version }}.xml"
+          aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/trident-${{ github.event.inputs.project_version }}.pom"
           aws s3 cp build/libs/ "$DEST/" --recursive --exclude "*" --include "*.jar"
 
           echo "## MD5 Summary of Uploaded Files" >> $GITHUB_STEP_SUMMARY
