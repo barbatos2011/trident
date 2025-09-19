@@ -68,7 +68,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Downloaded Files:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          ls -l "${{ env.DOWNLOAD_DIR }}" >> $GITHUB_STEP_SUMMARY | awk '{ $3=""; $4=""; print }'
+          ls -l "${{ env.DOWNLOAD_DIR }}" | awk '{ $3=""; $4=""; print }' >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: List files to sign
@@ -141,6 +141,12 @@ jobs:
       id-token: write # Needed for AWS credential provider
 
     steps:
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trident-${{ inputs.project_version }}-bundle.zip
+          path: ./signed-artifacts/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -158,5 +164,5 @@ jobs:
       - name: Upload signed artifacts to S3
         run: |
           echo "Uploading signed artifacts to s3://${{ env.S3_SIGNED_PATH }}/"
-          aws s3 cp ./trident-${{ inputs.project_version }}-bundle.zip "s3://${{ env.S3_SIGNED_PATH }}/" --recursive
+          aws s3 cp "./signed-artifacts/" "s3://${{ env.S3_SIGNED_PATH }}/" --recursive
           echo "Upload of signed artifacts to S3 completed successfully"
