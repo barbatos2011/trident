@@ -153,16 +153,13 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_UPLOAD_TEST }} # 👈 replace with your IAM role
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set S3 path for signed artifacts
+      - name: Upload signed artifacts to S3
         run: |
           S3_SIGNED_PATH="s3://${{ secrets.S3_BUCKET_TEST }}"
           if [ -n "${{ secrets.S3_PREFIX }}" ]; then
               S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ secrets.S3_PREFIX }}"
           fi
           S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ github.event.inputs.project_version }}"
-
-      - name: Upload signed artifacts to S3
-        run: |
-          echo "Uploading signed artifacts to s3://${{ env.S3_SIGNED_PATH }}/"
-          aws s3 cp "./signed-artifacts/" "s3://${{ env.S3_SIGNED_PATH }}/" --recursive
+          echo "Uploading signed artifacts to $S3_SIGNED_PATH
+          aws s3 cp "./signed-artifacts/" "$S3_SIGNED_PATH" --recursive
           echo "Upload of signed artifacts to S3 completed successfully"
