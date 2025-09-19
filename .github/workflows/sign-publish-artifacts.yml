@@ -160,6 +160,6 @@ jobs:
               S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ secrets.S3_PREFIX }}"
           fi
           S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ github.event.inputs.project_version }}"
-          echo "Uploading signed artifacts to $S3_SIGNED_PATH
+          echo "Uploading signed artifacts to $S3_SIGNED_PATH"
           aws s3 cp "./signed-artifacts/" "$S3_SIGNED_PATH" --recursive
           echo "Upload of signed artifacts to S3 completed successfully"
