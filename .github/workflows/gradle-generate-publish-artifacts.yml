@@ -75,9 +75,9 @@ jobs:
                     mavenJava(MavenPublication) {
                         from components.java
 
-                        groupId = "${{ github.event.inputs.project_group }}"
+                        groupId = "${{ inputs.project_group }}"
                         artifactId = 'trident'
-                        version = "${{ github.event.inputs.project_version }}"
+                        version = "${{ inputs.project_version }}"
 
                         pom {
                             name = 'trident'
@@ -185,8 +185,8 @@ jobs:
           if [ -n "${{ secrets.S3_PREFIX }}" ]; then
               DEST="$DEST/${{ secrets.S3_PREFIX }}"
           fi
-          DEST="$DEST/${{ github.event.inputs.project_version }}"
-          aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/trident-${{ github.event.inputs.project_version }}.pom"
+          DEST="$DEST/${{ inputs.project_version }}"
+          aws s3 cp build/publications/mavenJava/pom-default.xml "$DEST/trident-${{ inputs.project_version }}.pom"
           aws s3 cp build/libs/ "$DEST/" --recursive --exclude "*" --include "*.jar"
 
           echo "## MD5 Summary of Uploaded Files" >> $GITHUB_STEP_SUMMARY
@@ -203,7 +203,7 @@ jobs:
           done
 
           LOCAL_MD5=$(md5sum build/publications/mavenJava/pom-default.xml | awk '{print $1}')
-          echo "| trident-${{ github.event.inputs.project_version }}.pom | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
-          echo "trident-${{ github.event.inputs.project_version }}.pom: $LOCAL_MD5"
+          echo "| trident-${{ inputs.project_version }}.pom | $LOCAL_MD5 |" >> $GITHUB_STEP_SUMMARY
+          echo "trident-${{ inputs.project_version }}.pom: $LOCAL_MD5"
 
 

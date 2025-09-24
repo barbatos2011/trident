@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Set S3 path
         run: |
-          echo "S3_PATH=${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}/${{ github.event.inputs.project_version }}" >> $GITHUB_ENV
+          echo "S3_PATH=${{ secrets.S3_BUCKET_DEV }}/${{ secrets.S3_PREFIX }}/${{ inputs.project_version }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,7 +38,7 @@ jobs:
       - name: Download files from S3
         run: |
           echo "Downloading files from ${{ env.S3_PATH }}"
-          aws s3 cp s3://${{ env.S3_PATH }}/ ${{ env.DOWNLOAD_DIR }}/ --recursive --exclude "*" --include "trident-${{ github.event.inputs.project_version }}*"
+          aws s3 cp s3://${{ env.S3_PATH }}/ ${{ env.DOWNLOAD_DIR }}/ --recursive --exclude "*" --include "trident-${{ inputs.project_version }}*"
 
           # Verify download was successful
           if [ -z "$(ls -A ${{ env.DOWNLOAD_DIR }})" ]; then
@@ -80,7 +80,7 @@ jobs:
       - name: Sign artifacts
         run: |
           # Sign each JAR file
-          PREFIX="${{ env.DOWNLOAD_DIR }}/trident-${{ github.event.inputs.project_version }}"
+          PREFIX="${{ env.DOWNLOAD_DIR }}/trident-${{ inputs.project_version }}"
 
           files=(
               "${PREFIX}.jar"
@@ -163,7 +163,7 @@ jobs:
           if [ -n "${{ secrets.S3_PREFIX }}" ]; then
               S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ secrets.S3_PREFIX }}"
           fi
-          S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ github.event.inputs.project_version }}"
+          S3_SIGNED_PATH="$S3_SIGNED_PATH/${{ inputs.project_version }}"
           echo "Uploading signed artifacts to $S3_SIGNED_PATH"
           aws s3 cp "./signed-artifacts/" "$S3_SIGNED_PATH" --recursive
           echo "Upload of signed artifacts to S3 completed successfully"
